@@ -1,30 +1,31 @@
 
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { PermissionsAndroid, StatusBar, StyleSheet, useColorScheme, Text, TextInput, Button, View, FlatList, Alert } from 'react-native';
+import { PermissionsAndroid, Platform, StatusBar, StyleSheet, useColorScheme, Text, TextInput, Button, View, FlatList, Alert } from 'react-native';
 import {
   SafeAreaProvider,
   useSafeAreaInsets,
 } from 'react-native-safe-area-context';
 import { useEffect, useState } from 'react';
-import messaging from "@react-native-firebase/messaging"
-
+import messaging from "@react-native-firebase/messaging";
+import notifee from "@notifee/react-native";
 
 function App() {
   const isDarkMode = useColorScheme() === 'light';
 
-  const requestPermission = async () => {
-    try {
-      const result = await PermissionsAndroid.request(PermissionsAndroid.PERMISSIONS.POST_NOTIFICATIONS);
-      if (result === PermissionsAndroid.RESULTS.GRANTED) {
-        // requestToken();
-        console.log(result)
-      } else {
-        Alert.alert("Permission Denied");
-      }
-    } catch (error) {
-      console.log(error)
-    }
-  };
+
+  // const requestPermission = async () => {
+  //   try {
+  //     const result = await PermissionsAndroid.request(PermissionsAndroid.PERMISSIONS.POST_NOTIFICATIONS);
+  //     if (result === PermissionsAndroid.RESULTS.GRANTED) {
+  //       // requestToken();
+  //       console.log(result)
+  //     } else {
+  //       Alert.alert("Permission Denied");
+  //     }
+  //   } catch (error) {
+  //     console.log(error)
+  //   }
+  // };
 
   // const requestToken = async () => {
   //   try {
@@ -36,9 +37,39 @@ function App() {
   //   }
   // };
 
-  useEffect(() => {
-    requestPermission();
-  }, []);
+  async function onDisplayNotification() {
+    // Request permissions (required for iOS)
+    await notifee.requestPermission()
+
+    if (Platform.OS === 'android' && Platform.Version >= 33) {
+      await PermissionsAndroid.request(
+        PermissionsAndroid.PERMISSIONS.POST_NOTIFICATIONS
+      );
+    }
+
+    // Create a channel (required for Android)
+    const channelId = await notifee.createChannel({
+      id: 'default',
+      name: 'Default Channel',
+    });
+
+    // Display a notification
+    await notifee.displayNotification({
+      title: 'Best crud app',
+      body: 'Notification aayi hai',
+      android: {
+        channelId,
+        smallIcon: 'ic_launcher',
+        pressAction: {
+          id: 'default',
+        },
+      },
+    });
+  }
+
+  // useEffect(() => {
+  //   requestPermission();
+  // }, []);
 
   type Item = {
     id: string,
@@ -96,7 +127,7 @@ function App() {
           <Button title='Remove First Item' onPress={deleteFirst} />
         </View>
         <View style={{ marginBottom: 8, width: 100, alignSelf: 'center' }}>
-          <Button title='Clear List' onPress={clearList} />
+          <Button title='Clear List' onPress={onDisplayNotification} />
         </View>
       </SafeAreaView>
     </SafeAreaProvider>
